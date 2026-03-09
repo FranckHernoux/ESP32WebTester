@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel détaché</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #111317;
+            color: #e5e7eb;
+            font-family: 'Consolas', 'Fira Code', monospace;
+            font-size: 12px;
+            padding: 8px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            background: #1a1d23;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            flex-shrink: 0;
+        }
+        .panel-title { font-weight: 700; font-size: 13px; color: #4a9eff; }
+        .panel-info { font-size: 11px; color: #6b7280; margin-left: auto; }
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            background: #0d0f12;
+            border: 1px solid #2a2f38;
+            border-radius: 6px;
+            padding: 6px;
+            line-height: 1.5;
+        }
+        .panel-content div { white-space: pre-wrap; word-break: break-all; }
+        .line-tx { color: #4a9eff; }
+        .line-err { color: #f87171; }
+        .line-info { color: #6b7280; }
+        .line-bridge { color: #fbbf24; }
+
+        /* Data table mode */
+        .panel-content table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .panel-content th {
+            position: sticky;
+            top: 0;
+            background: #1a1d23;
+            padding: 4px 8px;
+            text-align: left;
+            border-bottom: 2px solid #4a9eff;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .panel-content td {
+            padding: 3px 8px;
+            border-bottom: 1px solid #2a2f38;
+            white-space: nowrap;
+        }
+        .panel-content tr:hover td { background: rgba(74, 158, 255, 0.08); }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3a3f48; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="panel-header">
+        <span class="panel-title" id="panelTitle">Panel</span>
+        <span class="panel-info" id="panelInfo">0 lignes</span>
+    </div>
+    <div class="panel-content" id="panelContent"></div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const panelType = params.get('type') || 'console';
+        const deviceIdx = parseInt(params.get('device') || '0', 10);
+
+        document.getElementById('panelTitle').textContent =
+            panelType === 'console' ? `Console — Device ${deviceIdx + 1}` :
+            panelType === 'datatable' ? `Tableau — Device ${deviceIdx + 1}` :
+            `Panel — Device ${deviceIdx + 1}`;
+
+        const content = document.getElementById('panelContent');
+        const info = document.getElementById('panelInfo');
+        let lineCount = 0;
+
+        if (panelType === 'datatable') {
+            content.innerHTML = '<table><thead><tr></tr></thead><tbody></tbody></table>';
+        }
+
+        // Listen for data from main window
+        if (window.electronRelay && window.electronRelay.onMessage) {
+            window.electronRelay.onMessage('panel-data', (data) => {
+                if (panelType === 'console') {
+                    const div = document.createElement('div');
+                    div.className = data.cls || '';
+                    div.textContent = data.text || '';
+                    content.appendChild(div);
+                    lineCount++;
+                    // Limit DOM
+                    while (content.children.length > 5000) content.removeChild(content.firstChild);
+                    content.scrollTop = content.scrollHeight;
+                    info.textContent = lineCount + ' lignes';
+                } else if (panelType === 'datatable') {
+                    const tbody = content.querySelector('tbody');
+                    const thead = content.querySelector('thead tr');
+                    if (data.headers && thead.children.length === 0) {
+                        for (const h of data.headers) {
+                            const th = document.createElement('th');
+                            th.textContent = h;
+                            thead.appendChild(th);
+                        }
+                    }
+                    if (data.row) {
+                        const tr = document.createElement('tr');
+                        for (const v of data.row) {
+                            const td = document.createElement('td');
+                            td.textContent = v;
+                            tr.appendChild(td);
+                        }
+                        tbody.appendChild(tr);
+                        lineCount++;
+                        while (tbody.children.length > 2000) tbody.removeChild(tbody.firstChild);
+                        content.scrollTop = content.scrollHeight;
+                        info.textContent = lineCount + ' lignes';
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

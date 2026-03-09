@@ -1,0 +1,67 @@
+{
+  "name": "esp32-web-tester",
+  "version": "1.0.0",
+  "description": "ESP32 Web Tester — Série, TCP/UDP, MQTT, Plotter, Logic Analyzer",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "build:all": "electron-builder --win --linux",
+    "publish": "electron-builder --win --publish always"
+  },
+  "author": "Neuralix",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "build": {
+    "appId": "com.neuralix.esp32webtester",
+    "productName": "ESP32 Web Tester",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "style.css",
+      "serial.js",
+      "network.js",
+      "plotter.js",
+      "pinmap.js",
+      "relay.js",
+      "detached-panel.html",
+      "plotter-popup.html",
+      "plotter-popup-preload.js",
+      "icon.*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "FranckHernoux",
+        "repo": "ESP32WebTester",
+        "releaseType": "release"
+      }
+    ]
+  }
+}

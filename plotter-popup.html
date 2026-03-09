@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Traceur</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: var(--bg); margin: 0; padding: 8px; overflow: hidden; }
+        .device-plotter-section { height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; }
+        .plotter-body { flex: 1; display: flex; flex-direction: column; }
+        .plotter-canvas-wrap { flex: 1; min-height: 0; }
+        .plotter-header { flex-shrink: 0; }
+        .plotter-drag-handle, .btn-plotter-dock-side { display: none !important; }
+        .plotter-resize-handle { display: none !important; }
+    </style>
+</head>
+<body class="show-plotter">
+    <div class="device-plotter-section" id="plotterSection">
+        <div class="plotter-header">
+            <span class="plotter-title">Traceur — Device <span class="plotter-device-num">1</span></span>
+            <button class="btn btn-small btn-plotter-undock" title="Remettre dans la fenetre principale">&#x21B2;</button>
+            <div class="plotter-toolbar">
+                <label>Sep. :</label>
+                <select class="plotter-sep">
+                    <option value="auto">Auto</option>
+                    <option value=";">;</option>
+                    <option value=",">,</option>
+                    <option value=":">:</option>
+                    <option value="\t">Tab</option>
+                    <option value=" ">Espace</option>
+                </select>
+                <label>Suppr. debut :</label>
+                <input type="number" class="plotter-strip-start" value="0" min="0" max="50">
+                <label>Suppr. fin :</label>
+                <input type="number" class="plotter-strip-end" value="0" min="0" max="50">
+                <label>Fenetre :</label>
+                <input type="number" class="plotter-max-pts" value="500" min="50" max="10000" step="50" title="Nombre de points visibles">
+                <button class="btn btn-small btn-plotter-refresh">Actualiser</button>
+                <button class="btn btn-small btn-plotter-pause">Pause</button>
+                <button class="btn btn-small btn-plotter-clear">Reset</button>
+                <div class="png-dropdown">
+                    <button class="btn btn-small btn-plotter-png-toggle">PNG &#x25BE;</button>
+                    <div class="png-menu">
+                        <button class="btn-png-view" title="Exporter la vue actuelle">Vue actuelle</button>
+                        <button class="btn-png-full" title="Exporter toutes les donnees">Courbe complete</button>
+                    </div>
+                </div>
+                <button class="btn btn-small btn-plotter-csv" title="Exporter en CSV">CSV</button>
+                <button class="btn btn-small btn-plotter-fft">FFT</button>
+                <label><input type="checkbox" class="chk-multi-y"> Multi-Y</label>
+            </div>
+        </div>
+        <div class="plotter-body">
+            <div class="plotter-legend"></div>
+            <div class="plotter-canvas-wrap">
+                <canvas class="plotter-canvas"></canvas>
+            </div>
+            <div class="plotter-cursor-info"></div>
+            <div class="plotter-resize-handle"></div>
+            <div class="plotter-values"></div>
+        </div>
+        <div class="plotter-placeholder">En attente de donnees numeriques...</div>
+    </div>
+
+    <script src="plotter.js"></script>
+    <script>
+    (function () {
+        const section = document.getElementById('plotterSection');
+        const state = Plotter.init(section);
+
+        // Read config from URL params
+        const params = new URLSearchParams(window.location.search);
+        const deviceIdx = parseInt(params.get('device') || '0');
+        section.querySelector('.plotter-device-num').textContent = deviceIdx + 1;
+        document.title = 'Traceur — Device ' + (deviceIdx + 1);
+
+        if (params.get('sep')) section.querySelector('.plotter-sep').value = params.get('sep');
+        if (params.get('stripStart')) section.querySelector('.plotter-strip-start').value = params.get('stripStart');
+        if (params.get('stripEnd')) section.querySelector('.plotter-strip-end').value = params.get('stripEnd');
+        if (params.get('maxPts')) section.querySelector('.plotter-max-pts').value = params.get('maxPts');
+        if (params.get('multiY') === '1') section.querySelector('.chk-multi-y').checked = true;
+
+        // Receive plotter data
+        if (window.electronPlotter) {
+            // Electron mode: IPC from main process
+            window.electronPlotter.onFeed((line) => {
+                Plotter.feed(state, line);
+            });
+        } else {
+            // Browser mode: postMessage from opener window
+            window.addEventListener('message', (e) => {
+                if (e.data && e.data.type === 'plotter-feed' && e.data.device === deviceIdx) {
+                    Plotter.feed(state, e.data.line);
+                }
+            });
+        }
+
+        // Re-dock button: close this window (main/opener will detect and re-dock)
+        section.querySelector('.btn-plotter-undock').addEventListener('click', () => {
+            window.close();
+        });
+    })();
+    </script>
+</body>
+</html>
