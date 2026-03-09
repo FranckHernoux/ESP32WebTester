@@ -1,0 +1,17 @@
+{
+  "name": "ESP32-S3 Web Tester",
+  "short_name": "ESP32 Tester",
+  "description": "ESP32/Arduino debugging tool - Serial, TCP/UDP, MQTT, Plotter, Pin Map",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a1d23",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESP32 Web Tester</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <meta name="description" content="ESP32/Arduino debugging tool - Serial, TCP/UDP, MQTT, Plotter, Pin Map">
 </head>
 <body>
     <header>
@@ -711,5 +715,20 @@
     <script src="serial.js"></script>
     <script src="pinmap.js"></script>
     <script src="network.js"></script>
+    <script>
+    // PWA — Service Worker registration
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').then((reg) => {
+            reg.addEventListener('updatefound', () => {
+                const newSW = reg.installing;
+                newSW.addEventListener('statechange', () => {
+                    if (newSW.state === 'activated') {
+                        window.location.reload();
+                    }
+                });
+            });
+        });
+    }
+    </script>
 </body>
 </html>
